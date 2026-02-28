@@ -1,3 +1,35 @@
+// Register service worker for PWA installability
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("/sw.js").catch((err) => {
+    console.error("SW registration failed:", err);
+  });
+}
+
+// Dynamic favicon based on power state
+function updateFavicon(isOn) {
+  const color = isOn ? "#FFE46A" : "#1e1e2e";
+  const glow = isOn ? "#FAAF63" : "#1a1a28";
+  const base = isOn ? "#ABBDDB" : "#1a1a28";
+  const baseDark = isOn ? "#6B83A5" : "#111118";
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+    <rect width="512" height="512" rx="96" fill="#1a1a2e"/>
+    <path d="M340 200c0-50-38-90-84-90s-84 40-84 90c0 23 8 44 22 60l19 34c5 9 7 15 15 15h56c8 0 11-6 15-15l20-34c14-16 21-37 21-60z" fill="${color}"/>
+    <ellipse cx="256" cy="195" rx="18" ry="28" fill="${glow}" opacity="0.7"/>
+    <rect x="222" y="316" width="68" height="14" rx="7" fill="${base}"/>
+    <rect x="222" y="336" width="68" height="14" rx="7" fill="${baseDark}"/>
+    <rect x="222" y="356" width="68" height="14" rx="7" fill="${base}"/>
+    <path d="M246 376c0 0 0 20 10 20s10-20 10-20z" fill="${baseDark}"/>
+  </svg>`;
+  let link = document.querySelector("link[rel='icon'][type='image/svg+xml']");
+  if (!link) {
+    link = document.createElement("link");
+    link.rel = "icon";
+    link.type = "image/svg+xml";
+    document.head.appendChild(link);
+  }
+  link.href = "data:image/svg+xml," + encodeURIComponent(svg);
+}
+
 // Parse the Go datetime format "HH:MM DD.MM.YYYY" into a JS Date
 function parseDatetime(str) {
   if (!str) return null;
@@ -43,6 +75,9 @@ const historyList = document.getElementById("history-list");
 function render(data) {
   const isOn = data.grid === "on";
   const isPending = data.grid === "pending";
+
+  // Update favicon to reflect power state
+  if (!isPending) updateFavicon(isOn);
 
   // Body background
   body.className = isPending

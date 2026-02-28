@@ -141,6 +141,22 @@ func main() {
 	})
 	e.Static("/static", "static")
 
+	// Serve service worker from root so its scope covers the entire app
+	e.GET("/sw.js", func(c *echo.Context) error {
+		return c.File("static/sw.js")
+	})
+
+	// Serve icons at conventional root paths that browsers probe automatically
+	e.GET("/favicon.ico", func(c *echo.Context) error {
+		return c.File("static/icons/icon-192.png")
+	})
+	e.GET("/apple-touch-icon.png", func(c *echo.Context) error {
+		return c.File("static/icons/icon-192.png")
+	})
+	e.GET("/apple-touch-icon-precomposed.png", func(c *echo.Context) error {
+		return c.File("static/icons/icon-192.png")
+	})
+
 	e.GET("/api/state", func(c *echo.Context) error {
 		lock.Lock()
 		defer lock.Unlock()
