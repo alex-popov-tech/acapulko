@@ -192,4 +192,4 @@ async function fetchState() {
 
 // Render immediately from server-embedded data, then poll for updates
 render(INITIAL_STATE);
-setInterval(fetchState, 60000);
+setInterval(fetchState, 1000);
