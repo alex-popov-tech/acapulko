@@ -1,0 +1,45 @@
+name: "Acapulko"
+version: "0.2.0"
+slug: "acapulko"
+description: "Power outages tracking dashboard for a specific address in Odesa"
+url: "https://github.com/alex-popov-tech/acapulko"
+arch:
+  - aarch64
+ports:
+  8080/tcp: 8080
+ports_description:
+  8080/tcp: "Web UI"
+map:
+  - addon_config:rw
+options:
+  PORT: "8080"
+  HA_BASE_URL: ""
+  HA_TOKEN: ""
+  HA_ENTITY: "binary_sensor.inverter_grid"
+  HA_POLL_INTERVAL: "10s"
+  DTEK_BASE_URL: ""
+  DTEK_REGION: "oem"
+  DTEK_CITY: ""
+  DTEK_STREET: ""
+  DTEK_BUILDING: ""
+  DTEK_POLL_INTERVAL: "60s"
+  HISTORY_FILE_PATH: "/config/history.json"
+  HISTORY_WINDOW: "168h"
+  SENTRY_DSN: ""
+  SENTRY_ENV: "production"
+schema:
+  PORT: str
+  HA_BASE_URL: url
+  HA_TOKEN: password
+  HA_ENTITY: str
+  HA_POLL_INTERVAL: str
+  DTEK_BASE_URL: url
+  DTEK_REGION: str
+  DTEK_CITY: str
+  DTEK_STREET: str
+  DTEK_BUILDING: str
+  DTEK_POLL_INTERVAL: str
+  HISTORY_FILE_PATH: str
+  HISTORY_WINDOW: str
+  SENTRY_DSN: str
+  SENTRY_ENV: str
