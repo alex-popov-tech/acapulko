@@ -28,6 +28,53 @@ type PowerState struct {
 	History []HistoryItem `json:"history"`
 	Address string        `json:"address"`
 	Version string        `json:"version"`
+	Demo    bool          `json:"demo,omitempty"`
+}
+
+func demoState(grid, address string) PowerState {
+	now := nowKyiv()
+	h := func(dur time.Duration) datetime { return datetime{now.Add(-dur)} }
+	tp := func(dur time.Duration) *datetime { d := h(dur); return &d }
+
+	history := []HistoryItem{
+		{State: "off", From: h(23 * time.Hour), To: tp(21*time.Hour + 45*time.Minute)},
+		{State: "on", From: h(21*time.Hour + 45*time.Minute), To: tp(18 * time.Hour)},
+		{State: "off", From: h(18 * time.Hour), To: tp(14*time.Hour + 30*time.Minute)},
+		{State: "on", From: h(14*time.Hour + 30*time.Minute), To: tp(6 * time.Hour)},
+		{State: "off", From: h(6 * time.Hour), To: tp(4*time.Hour + 45*time.Minute)},
+	}
+
+	state := PowerState{
+		Grid:    grid,
+		Address: address,
+		Version: version,
+		Demo:    true,
+	}
+
+	if grid == "on" {
+		history = append(history, HistoryItem{
+			State: "on",
+			From:  h(4*time.Hour + 45*time.Minute),
+		})
+	} else {
+		history = append(history,
+			HistoryItem{
+				State: "on",
+				From:  h(4*time.Hour + 45*time.Minute),
+				To:    tp(35 * time.Minute),
+			},
+			HistoryItem{
+				State: "off",
+				From:  h(35 * time.Minute),
+			},
+		)
+		outFrom := h(35 * time.Minute)
+		outTo := datetime{now.Add(1*time.Hour + 25*time.Minute)}
+		state.Outage = &Outage{Type: "emergency", From: &outFrom, To: &outTo}
+	}
+
+	state.History = history
+	return state
 }
 
 func main() {
@@ -161,6 +208,15 @@ func main() {
 		lock.Lock()
 		defer lock.Unlock()
 		return c.JSON(http.StatusOK, data)
+	})
+
+	e.GET("/example/on", func(c *echo.Context) error {
+		c.Response().Header().Set("Content-Type", "text/html; charset=utf-8")
+		return tmpl.Execute(c.Response(), demoState("on", data.Address))
+	})
+	e.GET("/example/off", func(c *echo.Context) error {
+		c.Response().Header().Set("Content-Type", "text/html; charset=utf-8")
+		return tmpl.Execute(c.Response(), demoState("off", data.Address))
 	})
 
 	sc := echo.StartConfig{Address: ":" + cfg.Port}
