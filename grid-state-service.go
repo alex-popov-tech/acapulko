@@ -79,9 +79,9 @@ func (service *GridStateService) onTick(state string) {
 
 func (service *GridStateService) getGridState(ctx context.Context) (string, error) {
 	slog.Info("pulling grid state", "service", "grid-state", "url", service.homeassistantURL)
-	req, err := http.NewRequestWithContext(ctx, "GET", service.homeassistantURL, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", service.homeassistantURL, http.NoBody) //nolint:gosec // URL is from config, not user input
 	if err != nil {
-		return "", fmt.Errorf("cannot construct url for homeassistant pulling: %v", err)
+		return "", fmt.Errorf("cannot construct url for homeassistant pulling: %w", err)
 	}
 	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", service.token))
 	res, err := service.client.Do(req)

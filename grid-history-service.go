@@ -113,7 +113,7 @@ func (service *GridHistoryService) removeOldHistoryItems() {
 	cutoff := nowKyiv().Add(-service.historyWindow)
 	fresh := []HistoryItem{}
 	for _, it := range service.state {
-		if it.To == nil || !it.To.Time.Before(cutoff) {
+		if it.To == nil || !it.To.Before(cutoff) {
 			fresh = append(fresh, it)
 		}
 	}
@@ -122,11 +122,11 @@ func (service *GridHistoryService) removeOldHistoryItems() {
 
 func (service *GridHistoryService) writeSnapshotToDb(data []byte) error {
 	tmp := service.jsonDbPath + ".tmp"
-	if err := os.WriteFile(tmp, data, 0o644); err != nil {
-		return fmt.Errorf("cannot write history to temp file: %v", err)
+	if err := os.WriteFile(tmp, data, 0o600); err != nil { //nolint:gosec // history file, not sensitive
+		return fmt.Errorf("cannot write history to temp file: %w", err)
 	}
 	if err := os.Rename(tmp, service.jsonDbPath); err != nil {
-		return fmt.Errorf("cannot rename temp file to db file: %v", err)
+		return fmt.Errorf("cannot rename temp file to db file: %w", err)
 	}
 	return nil
 }

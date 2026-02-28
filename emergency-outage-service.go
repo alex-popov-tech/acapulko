@@ -116,7 +116,7 @@ func (service *OutageService) getOutage(ctx context.Context) (*Outage, error) {
 		url.QueryEscape(service.street),
 	)
 	slog.Info("pulling emergency outage", "service", "outage", "url", u)
-	req, err := http.NewRequestWithContext(ctx, "GET", u, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", u, http.NoBody) //nolint:gosec // URL is from config, not user input
 	if err != nil {
 		return nil, fmt.Errorf("failed to create outage request: %w", err)
 	}

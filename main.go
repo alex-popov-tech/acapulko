@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"html/template"
 	"log"
 	"log/slog"
@@ -105,7 +106,7 @@ func main() {
 		template.New("index.html").Funcs(template.FuncMap{
 			"json": func(v any) template.JS {
 				b, _ := json.Marshal(v)
-				return template.JS(b)
+				return template.JS(b) //nolint:gosec // data is server-controlled, not user input
 			},
 		}).ParseFiles("templates/index.html"),
 	)
@@ -148,7 +149,7 @@ func main() {
 
 	sc := echo.StartConfig{Address: ":" + cfg.Port}
 	slog.Info("starting server", "version", version, "address", ":"+cfg.Port)
-	if err := sc.Start(ctx, e); err != nil && err != http.ErrServerClosed {
+	if err := sc.Start(ctx, e); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		slog.Error("server failed", "error", err)
 	}
 }
