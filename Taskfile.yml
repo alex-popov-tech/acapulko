@@ -1,0 +1,58 @@
+version: '3'
+
+vars:
+  APP_NAME: acapulko
+  VERSION:
+    sh: git describe --tags --always --dirty 2>/dev/null || echo "dev"
+
+tasks:
+  dev:
+    desc: Start dev server with hot reload
+    cmds:
+      - air -c .air.toml
+
+  build:
+    desc: Build binary for current platform
+    cmds:
+      - go build -ldflags="-s -w -X main.version={{.VERSION}}" -o bin/{{.APP_NAME}} .
+
+  build-pi:
+    desc: Cross-compile for Raspberry Pi 5 (linux/arm64)
+    env:
+      CGO_ENABLED: "0"
+      GOOS: linux
+      GOARCH: arm64
+    cmds:
+      - go build -ldflags="-s -w -X main.version={{.VERSION}}" -trimpath -o bin/{{.APP_NAME}}-linux-arm64 .
+
+  lint:
+    desc: Run golangci-lint
+    cmds:
+      - golangci-lint run ./...
+
+  fmt:
+    desc: Run code formatters
+    cmds:
+      - golangci-lint fmt ./...
+
+  vuln:
+    desc: Run vulnerability check
+    cmds:
+      - govulncheck ./...
+
+  test:
+    desc: Run tests with race detector
+    cmds:
+      - go test -race ./...
+
+  check:
+    desc: Run full quality gate (lint + vuln + test)
+    cmds:
+      - task: lint
+      - task: vuln
+      - task: test
+
+  clean:
+    desc: Remove build artifacts
+    cmds:
+      - rm -rf bin/ tmp/ coverage.out

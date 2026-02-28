@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Power Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body class="power-pending">
+  <div class="container">
+
+    <!-- Address -->
+    <p id="address" class="address">{{.Address}}</p>
+
+    <!-- Status badge -->
+    <div class="status-wrap">
+      <div id="status-badge" class="status-badge pending">
+        <span id="status-dot" class="status-dot pending"></span>
+        <span id="status-text">Loading...</span>
+      </div>
+      <p id="ongoing-duration" class="ongoing-duration" style="display:none"></p>
+    </div>
+
+    <!-- Lightbulb -->
+    <div class="bulb-wrap">
+      <svg viewBox="0 0 512 512">
+        <!-- Bulb body -->
+        <path
+          id="bulb-body"
+          d="M411.111 183.926c0-87.791-68.91-158.959-153.914-158.959S103.283 96.136 103.283 183.926
+             c0 39.7 14.093 75.999 37.392 103.856h-.001l33.666 61.027c8.793 16.28 12.057 26.792 26.792 26.792
+             h109.774c14.736 0 19.071-11.07 26.792-26.792l36.022-61.027h-.002
+             c23.299-27.857 37.393-64.156 37.393-103.856z"
+          fill="#1e1e2e"
+        />
+
+        <!-- Filament -->
+        <path
+          id="bulb-filament"
+          d="M321.905 211.203c.149-.131.297-.251.447-.395c2.787-2.667 5.082-6.921 3.161-10.867
+             c-7.879-16.176-31.97-21.308-49.524-15.951c-.889.271-1.751.566-2.588.885
+             c-9.562-5.583-21.434-6.925-32.001-3.569a35.399 35.399 0 0 0-3.678 1.394
+             c-5.785-3.38-12.552-5.066-19.294-4.414c-14.112 1.365-26.375 12.81-28.805 26.752
+             l-1.112.688c9.617 15.541 34.93 60.071 36.552 79.233
+             c2.045 24.174.002 89.793-.019 90.453l11.994.379
+             c.086-2.723 2.086-66.978-.019-91.844c-.938-11.087-7.722-28.758-20.164-52.521
+             c-5.807-11.092-11.445-20.83-14.858-26.576c2.36-7.646 9.61-13.848 17.586-14.619
+             c2.429-.235 4.893.037 7.251.729a22.68 22.68 0 0 0-2.32 3.638
+             c-4.047 7.935-2.356 17.898 3.933 23.176c3.725 3.125 9.137 4.276 14.127 3
+             c4.647-1.188 8.239-4.242 9.854-8.379c1.451-3.718 1.328-8.01-.367-12.756
+             a30.665 30.665 0 0 0-4.05-7.655a28.134 28.134 0 0 1 13.61.744
+             c-1.715 1.975-3.027 4.173-3.89 6.556c-1.844 5.101-1.029 11.163 2.128 15.822
+             c2.721 4.016 6.856 6.403 11.348 6.551c.15.005.301.008.45.008
+             c3.935 0 7.67-1.692 10.562-4.797c3.397-3.647 5.126-8.71 4.624-13.544
+             c-.319-3.073-1.412-6.079-3.172-8.867c12.236-2.223 24.205 1.911 29.383 8.186
+             c-3.125 5.2-9.542 16.11-16.178 28.785c-12.441 23.764-19.227 41.435-20.164 52.521
+             c-2.104 24.866-.104 89.121-.019 91.844l11.994-.379
+             c-.021-.66-2.064-66.275-.019-90.453
+             c1.459-17.251 22.113-55.046 33.237-73.758z"
+          fill="#1a1a28"
+        />
+
+        <!-- Base - top band -->
+        <path
+          id="bulb-base-light-1"
+          d="M324.406 402.701H189.423c-6.6 0-12-5.4-12-12v-6.957c0-6.6 5.4-12 12-12h134.983
+             c6.6 0 12 5.4 12 12v6.957c0 6.6-5.4 12-12 12z"
+          fill="#1a1a28"
+        />
+
+        <!-- Base - middle dark band -->
+        <path
+          id="bulb-base-dark"
+          d="M315.932 402.701H197.897c-6.6 0-12 5.4-12 12v6.957c0 6.6 5.4 12 12 12h38.122
+             c-11.367 4.229-23.369 14.285-23.369 25.946v4.68c9.123 10.254 17.619 28.081 33.802 28.081
+             h21.89c12.748 0 21.804-13.762 32.836-28.081v-4.68
+             c0-11.661-11.451-21.717-22.548-25.946h37.302c6.6 0 12-5.4 12-12v-6.957
+             c0-6.6-5.4-12-12-12z"
+          fill="#111118"
+        />
+
+        <!-- Base - bottom band -->
+        <path
+          id="bulb-base-light-2"
+          d="M317.399 445.659v-6.957c0-6.6-5.4-12-12-12H208.43c-6.6 0-12 5.4-12 12v6.957
+             c0 6.6 5.4 12 12 12h96.969c6.6 0 12-5.4 12-12z"
+          fill="#1a1a28"
+        />
+      </svg>
+    </div>
+
+    <!-- Power history -->
+    <div id="history-card" class="history-card pending">
+      <h2 class="history-title">Power History</h2>
+      <div id="history-list"></div>
+    </div>
+
+  </div>
+
+  <script>var INITIAL_STATE = {{json .}};</script>
+  <script src="/static/app.js"></script>
+</body>
+</html>

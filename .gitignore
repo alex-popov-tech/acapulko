@@ -1,0 +1,12 @@
+# Build
+bin/
+tmp/
+
+# Environment
+.env
+
+# Coverage
+coverage.out
+
+# OS
+.DS_Store
