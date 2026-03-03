@@ -260,7 +260,7 @@ func fetchInitialGridState(ctx context.Context, haURL, token string) (string, er
 	req.Header.Add("Authorization", "Bearer "+token)
 
 	client := &http.Client{Timeout: 10 * time.Second}
-	res, err := client.Do(req)
+	res, err := client.Do(req) //nolint:gosec // URL is from server config, not user input
 	if err != nil {
 		return "", fmt.Errorf("failed to GET grid state: %w", err)
 	}
