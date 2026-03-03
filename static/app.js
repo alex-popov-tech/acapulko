@@ -53,7 +53,9 @@ function formatDuration(start, end) {
   const hrs = Math.floor(ms / 3600000);
   const mins = Math.floor((ms % 3600000) / 60000);
   if (hrs > 0) return `${hrs}h ${mins}m`;
-  return `${mins}m`;
+  if (mins > 0) return `${mins}m`;
+  const secs = Math.floor((ms % 60000) / 1000);
+  return `${secs}s`;
 }
 
 // DOM references
@@ -105,7 +107,10 @@ function render(data) {
     ongoingDuration.textContent = "Expected to end at " + formatTime(expectedEnd);
     ongoingDuration.style.display = "block";
   } else if (data.outage) {
-    ongoingDuration.textContent = "Ongoing";
+    const outageStart = parseDatetime(data.outage.from);
+    ongoingDuration.textContent = outageStart
+      ? "Ongoing · " + formatDuration(outageStart, new Date())
+      : "Ongoing";
     ongoingDuration.style.display = "block";
   } else {
     ongoingDuration.style.display = "none";
@@ -169,29 +174,29 @@ function render(data) {
     row.appendChild(times);
 
     // Duration
-    if (to) {
-      const dur = document.createElement("span");
-      dur.className = "history-duration";
-      dur.textContent = formatDuration(from, to);
-      row.appendChild(dur);
-    }
+    const dur = document.createElement("span");
+    dur.className = "history-duration";
+    dur.textContent = formatDuration(from, to || new Date());
+    row.appendChild(dur);
 
     historyList.appendChild(row);
   }
 }
 
+let currentState = INITIAL_STATE;
+
 async function fetchState() {
   try {
     const res = await fetch("/api/state");
-    const data = await res.json();
-    render(data);
+    currentState = await res.json();
   } catch (err) {
     console.error("Failed to fetch power state:", err);
   }
 }
 
-// Render immediately from server-embedded data, then poll for updates
-render(INITIAL_STATE);
+// Render immediately from server-embedded data, then tick every second
+render(currentState);
+setInterval(() => render(currentState), 1000);
 if (!INITIAL_STATE.demo) {
   setInterval(fetchState, 1000);
 }
