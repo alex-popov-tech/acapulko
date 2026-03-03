@@ -13,7 +13,6 @@ if [ -f "$OPTIONS_FILE" ]; then
     export HA_BASE_URL=$(jq -r '.HA_BASE_URL' "$OPTIONS_FILE")
     export HA_TOKEN=$(jq -r '.HA_TOKEN' "$OPTIONS_FILE")
     export HA_ENTITY=$(jq -r '.HA_ENTITY' "$OPTIONS_FILE")
-    export HA_POLL_INTERVAL=$(jq -r '.HA_POLL_INTERVAL' "$OPTIONS_FILE")
     export DTEK_BASE_URL=$(jq -r '.DTEK_BASE_URL' "$OPTIONS_FILE")
     export DTEK_REGION=$(jq -r '.DTEK_REGION' "$OPTIONS_FILE")
     export DTEK_CITY=$(jq -r '.DTEK_CITY' "$OPTIONS_FILE")

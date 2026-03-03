@@ -10,10 +10,9 @@ import (
 type Config struct {
 	Port string
 
-	HABaseURL      string
-	HAToken        string
-	HAEntity       string
-	HAPollInterval time.Duration
+	HABaseURL string
+	HAToken   string
+	HAEntity  string
 
 	DTEKBaseURL      string
 	DTEKRegion       string
@@ -32,7 +31,7 @@ type Config struct {
 func loadConfig() (*Config, error) {
 	required := []string{
 		"PORT",
-		"HA_BASE_URL", "HA_TOKEN", "HA_ENTITY", "HA_POLL_INTERVAL",
+		"HA_BASE_URL", "HA_TOKEN", "HA_ENTITY",
 		"DTEK_BASE_URL", "DTEK_REGION", "DTEK_CITY", "DTEK_STREET", "DTEK_BUILDING", "DTEK_POLL_INTERVAL",
 		"HISTORY_FILE_PATH", "HISTORY_WINDOW",
 		"SENTRY_DSN", "SENTRY_ENV",
@@ -48,10 +47,6 @@ func loadConfig() (*Config, error) {
 		return nil, fmt.Errorf("missing required environment variables: %s", strings.Join(missing, ", "))
 	}
 
-	haPoll, err := time.ParseDuration(os.Getenv("HA_POLL_INTERVAL"))
-	if err != nil {
-		return nil, fmt.Errorf("invalid duration for HA_POLL_INTERVAL: %w", err)
-	}
 	dtekPoll, err := time.ParseDuration(os.Getenv("DTEK_POLL_INTERVAL"))
 	if err != nil {
 		return nil, fmt.Errorf("invalid duration for DTEK_POLL_INTERVAL: %w", err)
@@ -66,7 +61,6 @@ func loadConfig() (*Config, error) {
 		HABaseURL:        os.Getenv("HA_BASE_URL"),
 		HAToken:          os.Getenv("HA_TOKEN"),
 		HAEntity:         os.Getenv("HA_ENTITY"),
-		HAPollInterval:   haPoll,
 		DTEKBaseURL:      os.Getenv("DTEK_BASE_URL"),
 		DTEKRegion:       os.Getenv("DTEK_REGION"),
 		DTEKCity:         os.Getenv("DTEK_CITY"),

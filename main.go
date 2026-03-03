@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"html/template"
 	"log"
 	"log/slog"
@@ -118,12 +119,6 @@ func main() {
 		cfg.DTEKPollInterval,
 	)
 
-	gridStateService := NewGridStateService(
-		cfg.HABaseURL+"/api/states/"+cfg.HAEntity,
-		cfg.HAToken,
-		cfg.HAPollInterval,
-	)
-
 	gridHistoryService := NewGridHistoryService(cfg.HistoryFilePath, cfg.HistoryWindow)
 
 	gridHistoryService.Start([]func(state []HistoryItem){
@@ -140,14 +135,21 @@ func main() {
 		defer lock.Unlock()
 		data.Outage = o
 	}})
-	gridStateService.Start(ctx, []func(state string){
-		gridHistoryService.OnHistoryUpdate(ctx),
-		func(state string) {
-			lock.Lock()
-			defer lock.Unlock()
-			data.Grid = state
-		},
-	})
+
+	// Prepare history update callback for webhook handler
+	historyUpdateFn := gridHistoryService.OnHistoryUpdate(ctx)
+
+	// One-shot fetch of initial grid state from HA
+	haEntityURL := cfg.HABaseURL + "/api/states/" + cfg.HAEntity
+	initialState, err := fetchInitialGridState(ctx, haEntityURL, cfg.HAToken)
+	if err != nil {
+		slog.Warn("initial grid state fetch failed, starting as pending", "error", err)
+	} else {
+		lock.Lock()
+		data.Grid = initialState
+		lock.Unlock()
+		go historyUpdateFn(initialState)
+	}
 
 	tmpl := template.Must(
 		template.New("index.html").Funcs(template.FuncMap{
@@ -210,6 +212,30 @@ func main() {
 		return c.JSON(http.StatusOK, data)
 	})
 
+	e.POST("/api/webhook/grid", func(c *echo.Context) error {
+		var payload struct {
+			State string `json:"state"`
+		}
+		if err := json.NewDecoder(c.Request().Body).Decode(&payload); err != nil {
+			return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid JSON"})
+		}
+		if payload.State != "on" && payload.State != "off" {
+			return c.JSON(http.StatusBadRequest, map[string]string{"error": "state must be 'on' or 'off'"})
+		}
+
+		lock.Lock()
+		changed := data.Grid != payload.State
+		data.Grid = payload.State
+		lock.Unlock()
+
+		if changed {
+			slog.Info("grid state changed via webhook", "state", payload.State)
+			go historyUpdateFn(payload.State)
+		}
+
+		return c.JSON(http.StatusOK, map[string]string{"status": "ok"})
+	})
+
 	e.GET("/example/on", func(c *echo.Context) error {
 		c.Response().Header().Set("Content-Type", "text/html; charset=utf-8")
 		return tmpl.Execute(c.Response(), demoState("on", data.Address))
@@ -224,4 +250,34 @@ func main() {
 	if err := sc.Start(ctx, e); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		slog.Error("server failed", "error", err)
 	}
+}
+
+func fetchInitialGridState(ctx context.Context, haURL, token string) (string, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", haURL, http.NoBody)
+	if err != nil {
+		return "", fmt.Errorf("cannot construct HA request: %w", err)
+	}
+	req.Header.Add("Authorization", "Bearer "+token)
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	res, err := client.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("failed to GET grid state: %w", err)
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != 200 {
+		return "", fmt.Errorf("unexpected status code from HA: %d", res.StatusCode)
+	}
+
+	var body struct {
+		State string `json:"state"`
+	}
+	if err := json.NewDecoder(res.Body).Decode(&body); err != nil {
+		return "", fmt.Errorf("failed to decode HA response: %w", err)
+	}
+	if body.State != "on" && body.State != "off" {
+		return "", fmt.Errorf("unexpected grid state value: %s", body.State)
+	}
+	return body.State, nil
 }

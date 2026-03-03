@@ -16,7 +16,6 @@ options:
   HA_BASE_URL: ""
   HA_TOKEN: ""
   HA_ENTITY: "binary_sensor.inverter_grid"
-  HA_POLL_INTERVAL: "10s"
   DTEK_BASE_URL: ""
   DTEK_REGION: "oem"
   DTEK_CITY: ""
@@ -32,7 +31,6 @@ schema:
   HA_BASE_URL: url
   HA_TOKEN: password
   HA_ENTITY: str
-  HA_POLL_INTERVAL: str
   DTEK_BASE_URL: url
   DTEK_REGION: str
   DTEK_CITY: str
