@@ -23,6 +23,8 @@ if [ -f "$OPTIONS_FILE" ]; then
     export HISTORY_WINDOW=$(jq -r '.HISTORY_WINDOW' "$OPTIONS_FILE")
     export SENTRY_DSN=$(jq -r '.SENTRY_DSN' "$OPTIONS_FILE")
     export SENTRY_ENV=$(jq -r '.SENTRY_ENV' "$OPTIONS_FILE")
+    export TG_BOT_TOKEN=$(jq -r '.TG_BOT_TOKEN' "$OPTIONS_FILE")
+    export TG_CHAT_ID=$(jq -r '.TG_CHAT_ID' "$OPTIONS_FILE")
 else
     echo "WARNING: $OPTIONS_FILE not found!"
     echo "Checking what files exist in /data/:"
