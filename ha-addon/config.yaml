@@ -26,8 +26,8 @@ options:
   HISTORY_WINDOW: "168h"
   SENTRY_DSN: ""
   SENTRY_ENV: "production"
-  TG_BOT_TOKEN: str
-  TG_CHAT_ID: str
+  TG_BOT_TOKEN: ""
+  TG_CHAT_ID: ""
 schema:
   PORT: str
   HA_BASE_URL: url
