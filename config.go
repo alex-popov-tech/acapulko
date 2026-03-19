@@ -26,6 +26,9 @@ type Config struct {
 
 	SentryDSN string
 	SentryEnv string
+
+	TGBotToken string
+	TGChatID   string
 }
 
 func loadConfig() (*Config, error) {
@@ -35,6 +38,7 @@ func loadConfig() (*Config, error) {
 		"DTEK_BASE_URL", "DTEK_REGION", "DTEK_CITY", "DTEK_STREET", "DTEK_BUILDING", "DTEK_POLL_INTERVAL",
 		"HISTORY_FILE_PATH", "HISTORY_WINDOW",
 		"SENTRY_DSN", "SENTRY_ENV",
+		"TG_BOT_TOKEN", "TG_CHAT_ID",
 	}
 
 	var missing []string
@@ -71,5 +75,7 @@ func loadConfig() (*Config, error) {
 		HistoryWindow:    historyWindow,
 		SentryDSN:        os.Getenv("SENTRY_DSN"),
 		SentryEnv:        os.Getenv("SENTRY_ENV"),
+		TGBotToken:       os.Getenv("TG_BOT_TOKEN"),
+		TGChatID:         os.Getenv("TG_CHAT_ID"),
 	}, nil
 }

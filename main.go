@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -85,8 +86,11 @@ func main() {
 
 	outageService.Start(ctx, []func(o *Outage){func(o *Outage) {
 		lock.Lock()
-		defer lock.Unlock()
+		if o != data.Outage {
+			alertTelegram(cfg, o)
+		}
 		data.Outage = o
+		defer lock.Unlock()
 	}})
 
 	// Prepare history update callback for webhook handler
