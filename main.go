@@ -61,7 +61,7 @@ func main() {
 		Address: cfg.DTEKCity + ", " + cfg.DTEKStreet + ", " + cfg.DTEKBuilding,
 		Version: version,
 	}
-	dataJson, _ := json.Marshal(data)
+	dataJSON, _ := json.Marshal(data)
 	lock := sync.Mutex{}
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
@@ -83,8 +83,8 @@ func main() {
 			lock.Lock()
 			defer lock.Unlock()
 			data.History = state
-			dataJson, _ = json.Marshal(data)
-			broadcast(subs, dataJson)
+			dataJSON, _ = json.Marshal(data)
+			broadcast(subs, dataJSON)
 		},
 	})
 	data.History = gridHistoryService.State()
@@ -95,8 +95,8 @@ func main() {
 			alertTelegram(cfg, o)
 		}
 		data.Outage = o
-		dataJson, _ = json.Marshal(data)
-		broadcast(subs, dataJson)
+		dataJSON, _ = json.Marshal(data)
+		broadcast(subs, dataJSON)
 		defer lock.Unlock()
 	}})
 
@@ -111,7 +111,7 @@ func main() {
 	} else {
 		lock.Lock()
 		data.Grid = initialState
-		dataJson, _ = json.Marshal(data)
+		dataJSON, _ = json.Marshal(data)
 		lock.Unlock()
 		go historyUpdateFn(initialState)
 	}
@@ -174,7 +174,7 @@ func main() {
 	e.GET("/api/state", func(c *echo.Context) error {
 		lock.Lock()
 		defer lock.Unlock()
-		return c.JSONBlob(http.StatusOK, dataJson)
+		return c.JSONBlob(http.StatusOK, dataJSON)
 	})
 
 	e.GET("/api/state/stream", func(c *echo.Context) error {
@@ -187,7 +187,7 @@ func main() {
 		w.Header().Set("Cache-Control", "no-cache")
 		w.Header().Set("Connection", "keep-alive")
 
-		err = pushEvent(dataJson, w)
+		err = pushEvent(dataJSON, w)
 		if err != nil {
 			return err
 		}

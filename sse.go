@@ -73,4 +73,3 @@ func (ev *Event) MarshalTo(w io.Writer) error {
 
 	return nil
 }
-
