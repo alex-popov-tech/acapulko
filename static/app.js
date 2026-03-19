@@ -197,6 +197,4 @@ async function fetchState() {
 // Render immediately from server-embedded data, then tick every second
 render(currentState);
 setInterval(() => render(currentState), 1000);
-if (!INITIAL_STATE.demo) {
-  setInterval(fetchState, 1000);
-}
+setInterval(fetchState, 1000);
