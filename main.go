@@ -43,6 +43,8 @@ func main() {
 		Level: slog.LevelInfo,
 	})))
 
+	subs := &sync.Map{}
+
 	if err := sentry.Init(sentry.ClientOptions{
 		Dsn:         cfg.SentryDSN,
 		Environment: cfg.SentryEnv,
@@ -59,6 +61,7 @@ func main() {
 		Address: cfg.DTEKCity + ", " + cfg.DTEKStreet + ", " + cfg.DTEKBuilding,
 		Version: version,
 	}
+	dataJson, _ := json.Marshal(data)
 	lock := sync.Mutex{}
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
@@ -80,6 +83,8 @@ func main() {
 			lock.Lock()
 			defer lock.Unlock()
 			data.History = state
+			dataJson, _ = json.Marshal(data)
+			broadcast(subs, dataJson)
 		},
 	})
 	data.History = gridHistoryService.State()
@@ -90,6 +95,8 @@ func main() {
 			alertTelegram(cfg, o)
 		}
 		data.Outage = o
+		dataJson, _ = json.Marshal(data)
+		broadcast(subs, dataJson)
 		defer lock.Unlock()
 	}})
 
@@ -104,6 +111,7 @@ func main() {
 	} else {
 		lock.Lock()
 		data.Grid = initialState
+		dataJson, _ = json.Marshal(data)
 		lock.Unlock()
 		go historyUpdateFn(initialState)
 	}
@@ -166,7 +174,28 @@ func main() {
 	e.GET("/api/state", func(c *echo.Context) error {
 		lock.Lock()
 		defer lock.Unlock()
-		return c.JSON(http.StatusOK, data)
+		return c.JSONBlob(http.StatusOK, dataJson)
+	})
+
+	e.GET("/api/state/stream", func(c *echo.Context) error {
+		userid := c.QueryParam("userid")
+		slog.Info("SSE client connected", "ip", c.RealIP(), "userid", userid)
+		subs.Store(userid, c.Response())
+
+		w := c.Response()
+		w.Header().Set("Content-Type", "text/event-stream")
+		w.Header().Set("Cache-Control", "no-cache")
+		w.Header().Set("Connection", "keep-alive")
+
+		err = pushEvent(dataJson, w)
+		if err != nil {
+			return err
+		}
+
+		<-c.Request().Context().Done()
+		subs.Delete(userid)
+		slog.Info("SSE client disconnected", "ip", c.RealIP(), "userid", userid)
+		return nil
 	})
 
 	e.POST("/api/webhook/grid", func(c *echo.Context) error {
@@ -201,6 +230,26 @@ func main() {
 	if err := sc.Start(ctx, e); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		slog.Error("server failed", "error", err)
 	}
+}
+
+func broadcast(subs *sync.Map, data []byte) {
+	subs.Range(func(key, value any) bool {
+		if err := pushEvent(data, value.(http.ResponseWriter)); err != nil {
+			slog.Error("failed to send event", "error", err)
+		}
+		return true
+	})
+}
+
+func pushEvent(data []byte, w http.ResponseWriter) error {
+	event := Event{Data: data}
+	if err := event.MarshalTo(w); err != nil {
+		return err
+	}
+	if err := http.NewResponseController(w).Flush(); err != nil {
+		return err
+	}
+	return nil
 }
 
 func alertTelegram(cfg *Config, o *Outage) {

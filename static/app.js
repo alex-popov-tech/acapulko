@@ -185,16 +185,22 @@ function render(data) {
 
 let currentState = INITIAL_STATE;
 
-async function fetchState() {
-  try {
-    const res = await fetch("/api/state");
-    currentState = await res.json();
-  } catch (err) {
-    console.error("Failed to fetch power state:", err);
-  }
-}
-
 // Render immediately from server-embedded data, then tick every second
 render(currentState);
 setInterval(() => render(currentState), 1000);
-setInterval(fetchState, 1000);
+
+const userid = window.localStorage.getItem("userid") || crypto.randomUUID();
+window.localStorage.setItem("userid", userid);
+
+const eventSource = new EventSource(`/api/state/stream?userid=${userid}`);
+eventSource.onmessage = (event) => {
+  try {
+    currentState = JSON.parse(event.data);
+    render(currentState);
+  } catch (err) {
+    console.error("Failed to parse stream data:", err);
+  }
+};
+eventSource.onerror = () => {
+  console.warn("SSE connection lost, reconnecting...");
+};
