@@ -320,6 +320,19 @@ body.power-pending {
   }
 }
 
+/* Revision footer */
+.revision-footer {
+  text-align: center;
+  padding: 16px 0 0;
+}
+
+.revision-footer #revision {
+  font-size: 11px;
+  color: #475569;
+  font-family: monospace;
+  letter-spacing: 0.02em;
+}
+
 @keyframes svg-glow-pulse {
   0%,
   100% {

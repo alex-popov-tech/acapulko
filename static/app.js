@@ -73,6 +73,7 @@ const bulbBaseLight2 = document.getElementById("bulb-base-light-2");
 const addressEl = document.getElementById("address");
 const historyCard = document.getElementById("history-card");
 const historyList = document.getElementById("history-list");
+const revisionEl = document.getElementById("revision");
 
 function render(data) {
   const isOn = data.grid === "on";
@@ -104,7 +105,8 @@ function render(data) {
   // Outage expected end
   if (data.outage && data.outage.to) {
     const expectedEnd = parseDatetime(data.outage.to);
-    ongoingDuration.textContent = "Expected to end at " + formatTime(expectedEnd);
+    ongoingDuration.textContent =
+      "Expected to end at " + formatTime(expectedEnd);
     ongoingDuration.style.display = "block";
   } else if (data.outage) {
     const outageStart = parseDatetime(data.outage.from);
@@ -137,6 +139,9 @@ function render(data) {
     bulbBaseDark.setAttribute("fill", "#111118");
     bulbBaseLight2.setAttribute("fill", "#1a1a28");
   }
+
+  // Revision footer
+  revisionEl.textContent = data.version;
 
   // History card
   historyCard.className = "history-card " + stateClass;
