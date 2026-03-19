@@ -215,7 +215,7 @@ func alertTelegram(cfg *Config, o *Outage) {
 		)
 	}
 
-	json, err := json.Marshal(map[string]string{"chat_id": cfg.TGChatID, "text": message})
+	payload, err := json.Marshal(map[string]string{"chat_id": cfg.TGChatID, "text": message})
 	if err != nil {
 		slog.Error("telegram alert failed", "error", err)
 		return
@@ -224,7 +224,7 @@ func alertTelegram(cfg *Config, o *Outage) {
 	res, err := http.Post(
 		fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage", cfg.TGBotToken),
 		"application/json",
-		bytes.NewReader(json),
+		bytes.NewReader(payload),
 	)
 	if err != nil || res.StatusCode != 200 {
 		slog.Error("telegram alert failed", "error", err)
