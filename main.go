@@ -203,6 +203,37 @@ func main() {
 	}
 }
 
+func alertTelegram(cfg *Config, o *Outage) {
+	message := ""
+	if o == nil {
+		message = "✅ ДТЕК: аварійне відключення за адресою відсутнє"
+	} else {
+		message = fmt.Sprintf(
+			"⚠️ ДТЕК: зафіксоване аварійне відключення з %s до %s",
+			o.From.Format("02.01.2006 15:04"),
+			o.To.Format("02.01.2006 15:04"),
+		)
+	}
+
+	json, err := json.Marshal(map[string]string{"chat_id": cfg.TGChatID, "text": message})
+	if err != nil {
+		slog.Error("telegram alert failed", "error", err)
+		return
+	}
+
+	res, err := http.Post(
+		fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage", cfg.TGBotToken),
+		"application/json",
+		bytes.NewReader(json),
+	)
+	if err != nil || res.StatusCode != 200 {
+		slog.Error("telegram alert failed", "error", err)
+	}
+	if err == nil {
+		defer res.Body.Close()
+	}
+}
+
 func fetchInitialGridState(ctx context.Context, haURL, token string) (string, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", haURL, http.NoBody)
 	if err != nil {
