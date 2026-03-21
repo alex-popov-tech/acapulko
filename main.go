@@ -78,7 +78,7 @@ func main() {
 
 	gridHistoryService := NewGridHistoryService(cfg.HistoryFilePath, cfg.HistoryWindow)
 
-	gridHistoryService.Start([]func(state []HistoryItem){
+	gridHistoryService.Start(ctx, []func(state []HistoryItem){
 		func(state []HistoryItem) {
 			lock.Lock()
 			defer lock.Unlock()

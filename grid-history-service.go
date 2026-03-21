@@ -40,9 +40,53 @@ func NewGridHistoryService(
 	return service
 }
 
-func (service *GridHistoryService) Start(subs []func(state []HistoryItem)) {
+func (service *GridHistoryService) Start(ctx context.Context, subs []func(state []HistoryItem)) {
 	service.readDb()
 	service.subscribers = subs
+
+	// Prune stale records loaded from disk.
+	service.mu.Lock()
+	before := len(service.state)
+	service.removeOldHistoryItems()
+	if len(service.state) != before {
+		snapshot, _ := json.MarshalIndent(service.state, "", " ")
+		service.mu.Unlock()
+		if err := service.writeSnapshotToDb(snapshot); err != nil {
+			slog.Error("history db write failed after startup prune", "service", "history", "error", err)
+		}
+	} else {
+		service.mu.Unlock()
+	}
+
+	// Periodically prune old records so they don't linger between state changes.
+	go func() {
+		ticker := time.NewTicker(1 * time.Hour)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				service.mu.Lock()
+				before := len(service.state)
+				service.removeOldHistoryItems()
+				if len(service.state) != before {
+					snapshot, _ := json.MarshalIndent(service.state, "", " ")
+					subscriberCopy := make([]HistoryItem, len(service.state))
+					copy(subscriberCopy, service.state)
+					service.mu.Unlock()
+					for _, handler := range service.subscribers {
+						go handler(subscriberCopy)
+					}
+					if err := service.writeSnapshotToDb(snapshot); err != nil {
+						slog.Error("history db write failed after periodic prune", "service", "history", "error", err)
+					}
+				} else {
+					service.mu.Unlock()
+				}
+			}
+		}
+	}()
 }
 
 func (service *GridHistoryService) State() []HistoryItem {
