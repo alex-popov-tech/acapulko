@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -42,6 +41,8 @@ func main() {
 	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
 		Level: slog.LevelInfo,
 	})))
+
+	telegram := &Telegram{config: cfg}
 
 	subs := &sync.Map{}
 
@@ -92,7 +93,7 @@ func main() {
 	outageService.Start(ctx, []func(o *Outage){func(o *Outage) {
 		lock.Lock()
 		if o != data.Outage {
-			alertTelegram(cfg, o)
+			reportOutageToTelegram(telegram, o)
 		}
 		data.Outage = o
 		dataJSON, _ = json.Marshal(data)
@@ -200,7 +201,10 @@ func main() {
 
 	e.POST("/api/webhook/grid", func(c *echo.Context) error {
 		var payload struct {
-			State string `json:"state"`
+			State   string `json:"state"`
+			Hours   int    `json:"hours"`
+			Minutes int    `json:"minutes"`
+			Seconds int    `json:"seconds"`
 		}
 		if err := json.NewDecoder(c.Request().Body).Decode(&payload); err != nil {
 			return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid JSON"})
@@ -212,14 +216,23 @@ func main() {
 			)
 		}
 
+		const gridChangeThreshold = 10 // seconds; ignore sub-threshold flickers
+
+		durationSec := payload.Hours*3600 + payload.Minutes*60 + payload.Seconds
+
 		lock.Lock()
-		changed := data.Grid != payload.State
-		data.Grid = payload.State
+		changed := data.Grid != payload.State && durationSec > gridChangeThreshold
+		if changed {
+			data.Grid = payload.State
+			dataJSON, _ = json.Marshal(data)
+		}
 		lock.Unlock()
 
 		if changed {
 			slog.Info("grid state changed via webhook", "state", payload.State)
+			broadcast(subs, dataJSON)
 			go historyUpdateFn(payload.State)
+			go reportGridStateToTelegram(telegram, payload.State, payload.Hours, payload.Minutes, payload.Seconds)
 		}
 
 		return c.JSON(http.StatusOK, map[string]string{"status": "ok"})
@@ -252,7 +265,7 @@ func pushEvent(data []byte, w http.ResponseWriter) error {
 	return nil
 }
 
-func alertTelegram(cfg *Config, o *Outage) {
+func reportOutageToTelegram(t *Telegram, o *Outage) {
 	message := ""
 	if o == nil {
 		message = "✅ ДТЕК: аварійне відключення за адресою відсутнє"
@@ -264,23 +277,28 @@ func alertTelegram(cfg *Config, o *Outage) {
 		)
 	}
 
-	payload, err := json.Marshal(map[string]string{"chat_id": cfg.TGChatID, "text": message})
-	if err != nil {
-		slog.Error("telegram alert failed", "error", err)
-		return
+	t.sendMessage(message)
+}
+
+func reportGridStateToTelegram(t *Telegram, state string, hours, minutes, seconds int) {
+	var duration string
+	switch {
+	case hours > 0:
+		duration = fmt.Sprintf("%d год %d хв", hours, minutes)
+	case minutes > 0:
+		duration = fmt.Sprintf("%d хв %d сек", minutes, seconds)
+	default:
+		duration = fmt.Sprintf("%d сек", seconds)
 	}
 
-	res, err := http.Post(
-		fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage", cfg.TGBotToken),
-		"application/json",
-		bytes.NewReader(payload),
-	)
-	if err != nil || res.StatusCode != 200 {
-		slog.Error("telegram alert failed", "error", err)
+	var message string
+	if state == "on" {
+		message = fmt.Sprintf("🔌 Електропостачання відновлено\n⏱ Світла не було %s", duration)
+	} else {
+		message = fmt.Sprintf("⚡ Зафіксовано відключення\n⏱ Світло було %s", duration)
 	}
-	if err == nil {
-		defer res.Body.Close()
-	}
+
+	t.sendMessage(message)
 }
 
 func fetchInitialGridState(ctx context.Context, haURL, token string) (string, error) {
