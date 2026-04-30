@@ -3,7 +3,9 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"html/template"
 	"log/slog"
 	"net/http"
 	"os"
@@ -100,6 +102,7 @@ func run() error {
 	initialGridState, err := homeassistant.Attach(
 		s,
 		c.HABaseURL,
+		c.HAEntity,
 		c.HAToken,
 		gridUpdates,
 	)
@@ -111,6 +114,25 @@ func run() error {
 	state.Grid = initialGridState.State
 	slog.Info("homeassistant attached", "initial_state", initialGridState.State)
 	go gridUpdateHandler(gridUpdates, &state, &stateLock, c.TGChatID, tg)
+
+	tmpl, err := template.New("index.html").Funcs(template.FuncMap{
+		"json": func(v any) template.JS {
+			b, _ := json.Marshal(v)
+			return template.JS(b) //nolint:gosec // data is server-controlled, not user input
+		},
+	}).ParseFiles("templates/index.html")
+	if err != nil {
+		slog.Error("startup failed", "stage", "template", "error", err)
+		return err
+	}
+
+	s.GET("/", func(c *echo.Context) error {
+		stateLock.RLock()
+		snapshot := state
+		stateLock.RUnlock()
+		c.Response().Header().Set("Content-Type", "text/html; charset=utf-8")
+		return tmpl.Execute(c.Response(), snapshot)
+	})
 
 	s.GET("/api/state", func(c *echo.Context) error {
 		stateLock.RLock()
@@ -157,7 +179,7 @@ func run() error {
 	})
 
 	slog.Info("starting server", "port", c.Port, "version", version, "log_level", c.LogLevel)
-	if err = s.Start(ctx); err != nil {
+	if err = s.Start(ctx); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		slog.Error("server exited", "error", err)
 		return err
 	}

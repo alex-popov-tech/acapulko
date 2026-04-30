@@ -60,10 +60,11 @@ func GetGridState(ctx context.Context, homeAssistantURL, token string) (string, 
 
 func Attach(
 	s *server.Server,
-	homeHomeAssistantURL, token string,
+	baseURL, entity, token string,
 	updatesChannel chan<- WebhookPayload,
 ) (initial WebhookPayload, err error) {
-	prevState, err := GetGridState(context.Background(), homeHomeAssistantURL, token)
+	entityURL := baseURL + "/api/states/" + entity
+	prevState, err := GetGridState(context.Background(), entityURL, token)
 	if err != nil {
 		return WebhookPayload{}, fmt.Errorf("failed to get initial grid state: %w", err)
 	}

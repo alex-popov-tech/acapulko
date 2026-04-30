@@ -10,5 +10,6 @@ FROM alpine:3
 RUN apk add --no-cache ca-certificates tzdata
 COPY --from=build /acapulko /acapulko
 COPY static/ /static/
+COPY templates/ /templates/
 WORKDIR /
 ENTRYPOINT ["/acapulko"]

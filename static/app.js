@@ -71,8 +71,6 @@ const bulbBaseLight1 = document.getElementById("bulb-base-light-1");
 const bulbBaseDark = document.getElementById("bulb-base-dark");
 const bulbBaseLight2 = document.getElementById("bulb-base-light-2");
 const addressEl = document.getElementById("address");
-const historyCard = document.getElementById("history-card");
-const historyList = document.getElementById("history-list");
 const revisionEl = document.getElementById("revision");
 
 function render(data) {
@@ -142,50 +140,6 @@ function render(data) {
 
   // Revision footer
   revisionEl.textContent = data.version;
-
-  // History card
-  historyCard.className = "history-card " + stateClass;
-
-  // History list
-  historyList.innerHTML = "";
-  const items = [...data.history].reverse();
-  for (const item of items) {
-    const isOff = item.state === "off";
-    const ongoing = !item.to;
-    const from = parseDatetime(item.from);
-    const to = item.to ? parseDatetime(item.to) : null;
-
-    const row = document.createElement("div");
-    row.className = "history-row" + (isOff && ongoing ? " ongoing-off" : "");
-
-    // Dot
-    const dot = document.createElement("span");
-    const dotState = isOff ? "off" : "on";
-    dot.className = "history-dot " + dotState + (ongoing ? " ongoing" : "");
-    row.appendChild(dot);
-
-    // Times
-    const times = document.createElement("span");
-    times.className = "history-times";
-    if (to) {
-      times.innerHTML = formatTime(from) + " &rarr; " + formatTime(to);
-    } else {
-      const nowLabel = document.createElement("span");
-      nowLabel.className = "now-label " + dotState;
-      nowLabel.textContent = "now";
-      times.textContent = formatTime(from) + " ";
-      times.appendChild(nowLabel);
-    }
-    row.appendChild(times);
-
-    // Duration
-    const dur = document.createElement("span");
-    dur.className = "history-duration";
-    dur.textContent = formatDuration(from, to || new Date());
-    row.appendChild(dur);
-
-    historyList.appendChild(row);
-  }
 }
 
 let currentState = INITIAL_STATE;
