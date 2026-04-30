@@ -30,7 +30,7 @@ jobs:
             -ldflags="-s -w -X main.version=${{ github.ref_name }}" \
             -trimpath \
             -o acapulko-linux-arm64 \
-            .
+            ./src/cmd/server
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2

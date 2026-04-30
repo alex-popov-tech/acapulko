@@ -1,21 +1,10 @@
-package main
+package dtek
 
 import (
+	"log/slog"
 	"strings"
 	"time"
 )
-
-var kyivLocation = func() *time.Location {
-	loc, err := time.LoadLocation("Europe/Kyiv")
-	if err != nil {
-		panic("failed to load Europe/Kyiv timezone: " + err.Error())
-	}
-	return loc
-}()
-
-func nowKyiv() time.Time {
-	return time.Now().In(kyivLocation)
-}
 
 type datetime struct {
 	time.Time
@@ -42,11 +31,17 @@ func (dt *datetime) UnmarshalJSON(b []byte) error {
 }
 
 func (dt *datetime) Equal(other *datetime) bool {
-	if dt == other {
-		return true
-	}
 	if dt == nil || other == nil {
-		return false
+		return dt == other
 	}
 	return dt.Time.Equal(other.Time)
 }
+
+var kyivLocation = func() *time.Location {
+	loc, err := time.LoadLocation("Europe/Kyiv")
+	if err != nil {
+		slog.Error("failed to load timezone", "tz", "Europe/Kyiv", "error", err)
+		panic(err)
+	}
+	return loc
+}()

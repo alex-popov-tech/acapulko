@@ -2,7 +2,7 @@ root = "."
 tmp_dir = "tmp"
 
 [build]
-  cmd = "go build -ldflags=\"-X main.version=$(git describe --tags --always --dirty 2>/dev/null || echo dev)\" -o ./tmp/acapulko ."
+  cmd = "go build -ldflags=\"-X main.version=$(git describe --tags --always --dirty 2>/dev/null || echo dev)\" -o ./tmp/acapulko ./src/cmd/server"
   entrypoint = ["./tmp/acapulko"]
   delay = 1000
   exclude_dir = ["tmp", "vendor", "node_modules", ".git", "bin", "static"]
