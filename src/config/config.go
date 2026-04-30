@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
+
+	"github.com/alex-popov-tech/acapulko/src/logging"
 )
 
 type Config struct {
@@ -30,7 +32,10 @@ type Config struct {
 	LogLevel string
 }
 
-var cfg *Config
+var (
+	log = logging.New("config")
+	cfg *Config
+)
 
 func Load() (*Config, error) {
 	if cfg != nil {
@@ -39,7 +44,7 @@ func Load() (*Config, error) {
 
 	err := godotenv.Load()
 	if err != nil {
-		return nil, fmt.Errorf("failed to load .env file: %w", err)
+		log().Info("failed to load .env file", "error", err)
 	}
 	required := []string{
 		"PORT",
