@@ -62,6 +62,7 @@ func GetGridState(ctx context.Context, homeAssistantURL, token string) (string, 
 func Attach(
 	s *server.Server,
 	baseURL, entity, token string,
+	debounceWindow time.Duration,
 	updatesChannel chan<- WebhookPayload,
 ) (initial WebhookPayload, err error) {
 	entityURL := baseURL + "/api/states/" + entity
@@ -71,7 +72,7 @@ func Attach(
 	}
 	prev := WebhookPayload{State: prevState}
 
-	updateRes := debounce(time.Second*10, func(payload WebhookPayload) {
+	updateRes := debounce(debounceWindow, func(payload WebhookPayload) {
 		if prev.State != payload.State {
 			prev = payload
 			updatesChannel <- payload

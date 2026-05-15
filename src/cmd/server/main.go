@@ -104,6 +104,7 @@ func run() error {
 		c.HABaseURL,
 		c.HAEntity,
 		c.HAToken,
+		c.HADebounce,
 		gridUpdates,
 	)
 	if err != nil {

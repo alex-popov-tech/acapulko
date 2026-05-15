@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -14,9 +15,10 @@ import (
 type Config struct {
 	Port string
 
-	HABaseURL string
-	HAToken   string
-	HAEntity  string
+	HABaseURL  string
+	HAToken    string
+	HAEntity   string
+	HADebounce time.Duration
 
 	DTEKBaseURL      string
 	DTEKRegion       string
@@ -51,6 +53,7 @@ func Load() (*Config, error) {
 		"HA_BASE_URL",
 		"HA_TOKEN",
 		"HA_ENTITY",
+		"HA_DEBOUNCE_SECONDS",
 		"DTEK_BASE_URL",
 		"DTEK_REGION",
 		"DTEK_CITY",
@@ -89,6 +92,12 @@ func Load() (*Config, error) {
 		return nil, fmt.Errorf("invalid LOG_LEVEL %q (want debug|info|warn|error)", logLevel)
 	}
 
+	haDebounceSeconds, err := strconv.Atoi(os.Getenv("HA_DEBOUNCE_SECONDS"))
+	if err != nil {
+		return nil, fmt.Errorf("invalid HA_DEBOUNCE_SECONDS (want integer seconds): %w", err)
+	}
+	haDebounce := time.Duration(haDebounceSeconds) * time.Second
+
 	tgBaseURL := os.Getenv("TG_BASE_URL")
 	if tgBaseURL == "" {
 		tgBaseURL = "https://api.telegram.org"
@@ -99,6 +108,7 @@ func Load() (*Config, error) {
 		HABaseURL:        os.Getenv("HA_BASE_URL"),
 		HAToken:          os.Getenv("HA_TOKEN"),
 		HAEntity:         os.Getenv("HA_ENTITY"),
+		HADebounce:       haDebounce,
 		DTEKBaseURL:      os.Getenv("DTEK_BASE_URL"),
 		DTEKRegion:       os.Getenv("DTEK_REGION"),
 		DTEKCity:         os.Getenv("DTEK_CITY"),
