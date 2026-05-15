@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"sync"
 	"time"
@@ -78,8 +79,15 @@ func Attach(
 	})
 
 	s.POST("/api/webhook/grid", func(c *echo.Context) error {
+		raw, err := io.ReadAll(c.Request().Body)
+		if err != nil {
+			log().Warn("webhook rejected: cannot read body", "error", err)
+			return c.JSON(http.StatusBadRequest, map[string]string{"error": "cannot read body"})
+		}
+		log().Info("webhook payload received", "raw", string(raw))
+
 		var payload WebhookPayload
-		if err := json.NewDecoder(c.Request().Body).Decode(&payload); err != nil {
+		if err := json.Unmarshal(raw, &payload); err != nil {
 			log().Warn("webhook rejected: invalid json", "error", err)
 			return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid JSON"})
 		}
