@@ -16,6 +16,13 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      # Tag is v0.10.2; everything downstream (image tag, app version,
+      # acapulko-ha version:) uses the bare SemVer 0.10.2 so all four
+      # places hold one byte-identical string.
+      - name: Resolve bare SemVer
+        id: ver
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
@@ -27,7 +34,7 @@ jobs:
           GOARCH: arm64
         run: |
           go build \
-            -ldflags="-s -w -X main.version=${{ github.ref_name }}" \
+            -ldflags="-s -w -X main.version=${{ steps.ver.outputs.version }}" \
             -trimpath \
             -o acapulko-linux-arm64 \
             ./src/cmd/server
@@ -57,7 +64,17 @@ jobs:
           context: .
           platforms: linux/arm64
           push: true
-          build-args: VERSION=${{ github.ref_name }}
+          build-args: VERSION=${{ steps.ver.outputs.version }}
           tags: |
-            ghcr.io/${{ github.repository }}:${{ github.ref_name }}
+            ghcr.io/${{ github.repository }}:${{ steps.ver.outputs.version }}
             ghcr.io/${{ github.repository }}:latest
+
+      # Pure-app repo never builds HA artifacts; it only tells the HA glue
+      # repo "a new version exists". acapulko-ha's bump.yml does the rest.
+      - name: Notify acapulko-ha of new release
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.CI_DISPATCH_TOKEN }}
+          repository: alex-popov-tech/acapulko-ha
+          event-type: acapulko-release
+          client-payload: '{"version": "${{ steps.ver.outputs.version }}"}'
