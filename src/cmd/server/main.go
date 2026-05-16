@@ -59,7 +59,8 @@ func main() {
 func run() error {
 	c, err := config.Load()
 	if err != nil {
-		slog.Info(".env file not found", "stage", "config", "error", err)
+		slog.Error("startup failed", "stage", "config", "error", err)
+		return err
 	}
 
 	logging.Setup(c.LogLevel)
