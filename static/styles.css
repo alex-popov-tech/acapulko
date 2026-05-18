@@ -224,6 +224,22 @@ body.power-pending {
   letter-spacing: 0.02em;
 }
 
+/* Mobile: hide heading, show only the centered bulb */
+@media (max-width: 600px) {
+  .address,
+  .status-wrap {
+    display: none;
+  }
+
+  .bulb-wrap {
+    margin-bottom: 0;
+  }
+
+  .bulb-wrap svg {
+    max-width: min(88vw, 420px);
+  }
+}
+
 @keyframes svg-glow-pulse {
   0%,
   100% {
