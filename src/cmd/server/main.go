@@ -205,7 +205,7 @@ func outageHandler(
 			message := ""
 			if o == nil {
 				slog.Info("outage cleared")
-				message = "✅ ДТЕК: аварійне відключення за адресою відсутнє"
+				message = "👷✅ ДТЕК: аварійне відключення за адресою відсутнє"
 			} else {
 				slog.Info("outage detected",
 					"type", o.Type,
@@ -213,7 +213,7 @@ func outageHandler(
 					"to", o.To.Format("02.01.2006 15:04"),
 				)
 				message = fmt.Sprintf(
-					"⚠️ ДТЕК: зафіксоване аварійне відключення з %s до %s",
+					"👷⚠️ ДТЕК: зафіксоване аварійне відключення з %s до %s",
 					o.From.Format("02.01.2006 15:04"),
 					o.To.Format("02.01.2006 15:04"),
 				)
@@ -249,11 +249,11 @@ func gridUpdateHandler(
 			var message string
 			if gridEvent.State == "on" {
 				message = fmt.Sprintf(
-					"🔌 Електропостачання відновлено\n⏱ Світла не було %s",
+					"⚡✅ Електропостачання відновлено\n⏱ Світла не було %s",
 					duration,
 				)
 			} else {
-				message = fmt.Sprintf("⚡ Зафіксовано відключення\n⏱ Світло було %s", duration)
+				message = fmt.Sprintf("⚡❌ Зафіксовано відключення\n⏱ Світло було %s", duration)
 			}
 			go tg.SendMessage(tgChatID, message)
 		}()
